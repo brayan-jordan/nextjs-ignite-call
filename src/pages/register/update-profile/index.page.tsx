@@ -1,4 +1,5 @@
 import {
+  Avatar,
   Button,
   Heading,
   MultiStep,
@@ -15,6 +16,8 @@ import { useSession } from 'next-auth/react'
 import { GetServerSideProps } from 'next'
 import { getServerSession } from 'next-auth'
 import { buildNextAuthOptions } from '../../api/auth/[...nextauth].api'
+import { api } from '../../../lib/axios'
+import { useRouter } from 'next/router'
 
 const updateProfileFormSchema = z.object({
   bio: z.string(),
@@ -23,6 +26,7 @@ const updateProfileFormSchema = z.object({
 type UpdateProfileFormData = z.infer<typeof updateProfileFormSchema>
 
 export default function UpdateProfile() {
+  const router = useRouter()
   const session = useSession()
 
   const {
@@ -33,7 +37,15 @@ export default function UpdateProfile() {
     resolver: zodResolver(updateProfileFormSchema),
   })
 
-  async function handleUpdateProfile(data: UpdateProfileFormData) {}
+  async function handleUpdateProfile(data: UpdateProfileFormData) {
+    const { bio } = data
+
+    await api.put('/users/update-profile', {
+      bio,
+    })
+
+    await router.push(`/schedule/${session.data?.user.username}`)
+  }
 
   return (
     <RegisterContainer>
@@ -44,12 +56,16 @@ export default function UpdateProfile() {
           editar essas informações depois.
         </Text>
 
-        <MultiStep size={4} currentStep={1} />
+        <MultiStep size={4} currentStep={4} />
       </Header>
 
       <ProfileBox as="form" onSubmit={handleSubmit(handleUpdateProfile)}>
         <label>
           <Text size="sm">Foto de perfil</Text>
+          <Avatar
+            src={session.data?.user.avatar_url}
+            alt={session.data?.user.name}
+          />
         </label>
 
         <label>
@@ -70,7 +86,11 @@ export default function UpdateProfile() {
 }
 
 export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
-  const session = getServerSession(req, res, buildNextAuthOptions(req, res))
+  const session = await getServerSession(
+    req,
+    res,
+    buildNextAuthOptions(req, res),
+  )
 
   return {
     props: {
