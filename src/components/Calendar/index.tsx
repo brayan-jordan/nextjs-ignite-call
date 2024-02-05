@@ -10,6 +10,9 @@ import {
 import { getWeekDays } from '../../utils/get-week-days'
 import { useMemo, useState } from 'react'
 import dayjs from 'dayjs'
+import { useQuery } from '@tanstack/react-query'
+import { useRouter } from 'next/router'
+import { api } from '../../lib/axios'
 
 interface CalendarWeek {
   week: number
@@ -17,6 +20,10 @@ interface CalendarWeek {
     date: dayjs.Dayjs
     disabled: boolean
   }>
+}
+
+interface BlockedDates {
+  blockedWeekDays: number[]
 }
 
 type CalendarWeeks = CalendarWeek[]
@@ -27,8 +34,30 @@ interface CalendarProps {
 }
 
 export function Calendar({ onDateSelected, selectedDate }: CalendarProps) {
+  const router = useRouter()
+  const username = String(router.query.username)
+
   const [currentDate, setCurrentDate] = useState(() => {
     return dayjs().set('date', 1)
+  })
+
+  const { data: blockedDates } = useQuery<BlockedDates>({
+    queryKey: [
+      'blocked-dates',
+      username,
+      currentDate.get('year'),
+      currentDate.get('month'),
+    ],
+    queryFn: async () => {
+      const response = await api.get(`/users/${username}/blocked-dates`, {
+        params: {
+          year: currentDate.get('year'),
+          month: currentDate.get('month'),
+        },
+      })
+
+      return response.data
+    },
   })
 
   function handlePreviusMonth() {
@@ -80,7 +109,12 @@ export function Calendar({ onDateSelected, selectedDate }: CalendarProps) {
         return { date, disabled: true }
       }),
       ...daysInMonthArray.map((date) => {
-        return { date, disabled: date.endOf('day').isBefore(new Date()) }
+        return {
+          date,
+          disabled:
+            date.endOf('day').isBefore(new Date()) ||
+            blockedDates?.blockedWeekDays.includes(date.get('day')),
+        }
       }),
       ...nextMonthFillArray.map((date) => {
         return { date, disabled: true }
@@ -104,7 +138,7 @@ export function Calendar({ onDateSelected, selectedDate }: CalendarProps) {
     )
 
     return calendarWeeks
-  }, [currentDate])
+  }, [currentDate, blockedDates])
 
   const shortWeekDays = getWeekDays({ short: true })
 
