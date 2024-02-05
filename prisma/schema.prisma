@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -12,7 +12,7 @@ model User {
   id         String   @id @default(uuid())
   username   String   @unique
   name       String
-  bio        String?
+  bio        String?  @db.Text
   email      String?  @unique
   avatar_url String?
   created_at DateTime @default(now())
@@ -27,17 +27,17 @@ model User {
 
 // Tabela onde será inserido um registro toda vez que um usuário se autenticar com algum provider. (Google, Github, etc)
 model Account {
-  id                  String  @id @default(cuid())
+  id                  String  @id @default(cuid()) 
   user_id             String
   type                String
   provider            String
   provider_account_id String
-  refresh_token       String?
-  access_token        String?
+  refresh_token       String? @db.Text
+  access_token        String? @db.Text
   expires_at          Int?
   token_type          String?
   scope               String?
-  id_token            String?
+  id_token            String? @db.Text
   session_state       String?
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
