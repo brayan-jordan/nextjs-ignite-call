@@ -46,3 +46,7 @@ export const ConfirmStepActions = styled('div', {
   gap: '$2',
   marginTop: '$2',
 })
+
+export const FormError = styled(Text, {
+  color: '#F75A68',
+})
