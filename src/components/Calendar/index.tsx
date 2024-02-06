@@ -24,16 +24,16 @@ interface CalendarWeek {
 
 interface BlockedDates {
   blockedWeekDays: number[]
+  blockedDates: number[]
 }
 
 type CalendarWeeks = CalendarWeek[]
 
 interface CalendarProps {
-  selectedDate: Date | null
   onDateSelected: (date: Date) => void
 }
 
-export function Calendar({ onDateSelected, selectedDate }: CalendarProps) {
+export function Calendar({ onDateSelected }: CalendarProps) {
   const router = useRouter()
   const username = String(router.query.username)
 
@@ -117,7 +117,8 @@ export function Calendar({ onDateSelected, selectedDate }: CalendarProps) {
           date,
           disabled:
             date.endOf('day').isBefore(new Date()) ||
-            blockedDates.blockedWeekDays.includes(date.get('day')),
+            blockedDates.blockedWeekDays.includes(date.get('day')) ||
+            blockedDates.blockedDates.includes(date.get('date')),
         }
       }),
       ...nextMonthFillArray.map((date) => {
